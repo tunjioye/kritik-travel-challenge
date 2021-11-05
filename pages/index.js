@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import { fetchCountries, fetchCountry } from '../src/services/country'
-import { selectRandomItems } from '../src/utils'
+import { selectRandomItems, selectMutualNeighbors } from '../src/utils'
 
 const NUM_OF_RANDOM_ITEMS = 10
 
@@ -34,27 +34,7 @@ export default function Home() {
     })
     await Promise.all(promises)
       .then((responses) => {
-        const mutualNeighbors = responses.reduce((combinedNeighbors, response) => {
-          const { names, neighbors = [] } = response.body || {}
-          const { name: countryName } = names || {}
-
-          const isMutualNeighbor = responses.some((response) => {
-            const { names, neighbors: thisNeighbors = [] } = response.body || {}
-            const { name: thisCountryName } = names || {}
-            if (thisCountryName === countryName) return false
-            return (
-              thisNeighbors.some((x) => x.name === countryName) &&
-              neighbors.some((x) => x.name === thisCountryName)
-            )
-          })
-
-          if (isMutualNeighbor) {
-            return [...combinedNeighbors, { name: countryName }]
-          }
-
-          return combinedNeighbors
-        }, [])
-
+        const mutualNeighbors = selectMutualNeighbors(responses)
         setMutualNeighbors(mutualNeighbors)
       })
       .catch((error) => setError(error))
