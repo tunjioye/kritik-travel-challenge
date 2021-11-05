@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import { fetchCountries, fetchCountry } from '../src/services/country'
@@ -20,16 +20,18 @@ export default function Home() {
         const { body: countries = [] } = response || {}
         const randomlySelectedCountries = selectRandomItems(countries, NUM_OF_RANDOM_ITEMS)
         setSelectedCountries(randomlySelectedCountries)
+        // fetch country details with neighbors and calculate mutual neighbors
+        fetchCountryDetails(randomlySelectedCountries)
       },
       error: (error) => setError(error),
       done: () => setLoading(false),
     })
   }
 
-  const generateGroupings = async () => {
+  const fetchCountryDetails = async (countries) => {
     setLoadingMutualNeighbors(true)
     const promises = []
-    selectedCountries.forEach((country) => {
+    countries.forEach((country) => {
       promises.push(fetchCountry(country.name))
     })
     await Promise.all(promises)
@@ -40,10 +42,6 @@ export default function Home() {
       .catch((error) => setError(error))
       .finally(() => setLoadingMutualNeighbors(false))
   }
-
-  useEffect(() => {
-    fetchRandomCountries()
-  }, [])
 
   return (
     <div className={styles.container}>
@@ -56,7 +54,7 @@ export default function Home() {
       <main className={styles.main}>
         {error && <div className={styles.error}>{error.message}</div>}
 
-        <button type="button" onClick={generateGroupings}>
+        <button type="button" onClick={fetchRandomCountries}>
           Generate Groupings
         </button>
 

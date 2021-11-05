@@ -4,7 +4,7 @@ export const selectRandomItems = (array, number) => {
   const selectedItems = []
   for (let i = 0; i < array.length; i++) {
     if (selectedItems.length === number) break
-    const randomIndex = Math.round(Math.random() * array.length)
+    const randomIndex = Math.round(Math.random() * (array.length - 1))
     const randomItem = array.splice(randomIndex, 1)[0]
     selectedItems.push(randomItem)
   }
