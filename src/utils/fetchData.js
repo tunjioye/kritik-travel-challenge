@@ -20,6 +20,7 @@ export const fetchData = async (params, callback) => {
     })
 
     if (callback?.success) callback.success(response)
+    return response;
   } catch (error) {
     if (callback?.error) callback.error(error)
   } finally {

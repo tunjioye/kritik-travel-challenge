@@ -10,6 +10,8 @@ export default function Home() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [selectedCountries, setSelectedCountries] = useState([])
+  const [loadingMutualNeighbors, setLoadingMutualNeighbors] = useState(false)
+  const [mutualNeighbors, setMutualNeighbors] = useState([])
 
   const fetchRandomCountries = async () => {
     setLoading(true)
@@ -24,10 +26,40 @@ export default function Home() {
     })
   }
 
-  const generateGroupings = () => {
-    window.alert('generating mutual neighbours')
-  }
+  const generateGroupings = async () => {
+    setLoadingMutualNeighbors(true)
+    const promises = []
+    selectedCountries.forEach((country) => {
+      promises.push(fetchCountry(country.name))
+    })
+    await Promise.all(promises)
+      .then((responses) => {
+        const mutualNeighbors = responses.reduce((combinedNeighbors, response) => {
+          const { names, neighbors = [] } = response.body || {}
+          const { name: countryName } = names || {}
 
+          const isMutualNeighbor = responses.some((response) => {
+            const { names, neighbors: thisNeighbors = [] } = response.body || {}
+            const { name: thisCountryName } = names || {}
+            if (thisCountryName === countryName) return false
+            return (
+              thisNeighbors.some((x) => x.name === countryName) &&
+              neighbors.some((x) => x.name === thisCountryName)
+            )
+          })
+
+          if (isMutualNeighbor) {
+            return [...combinedNeighbors, { name: countryName }]
+          }
+
+          return combinedNeighbors
+        }, [])
+
+        setMutualNeighbors(mutualNeighbors)
+      })
+      .catch((error) => setError(error))
+      .finally(() => setLoadingMutualNeighbors(false))
+  }
 
   useEffect(() => {
     fetchRandomCountries()
@@ -63,9 +95,24 @@ export default function Home() {
 
         <section className={styles.section}>
           <h2>Neighbors</h2>
-          <ul className="neighboring-countries">
-            <li>Mutual neighboring countries will show up here</li>
-          </ul>
+          {loadingMutualNeighbors && (
+            <p className={styles.loading}>loading mutual neighboring countries ...</p>
+          )}
+          {!loadingMutualNeighbors && mutualNeighbors.length === 0 && (
+            <>
+              <p>No groupings found.</p>
+              <p>
+                Click <b>Generate Groupings Button</b> to see mutual neighbors
+              </p>
+            </>
+          )}
+          {!loadingMutualNeighbors && mutualNeighbors.length > 0 && (
+            <ul className="neighboring-countries">
+              {mutualNeighbors.map((country) => (
+                <li key={country.name}>{country.name}</li>
+              ))}
+            </ul>
+          )}
         </section>
       </main>
 
